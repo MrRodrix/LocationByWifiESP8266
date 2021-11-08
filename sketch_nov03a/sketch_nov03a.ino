@@ -1,46 +1,54 @@
 #include <ESP8266WiFi.h>
-//#include <ESP8266HTTPClient.h>
 #include <WifiLocation.h>
 
 
 const String key = "AIzaSyANCTMJZQJl1K3Qi_l0jkijdw4xMN-vQNI";
 const char* ssid = "DTEL_SOARES";
 const char* passwd = "lidiane20";
-const String servername = "www.googleapis.com/geolocation/v1";
+const String serverPath = "SERVER.COM.BR";
 WiFiClient cliente;
-WifiLocation location(key);
+WifiLocation location("fuckyou");
 
-void setup() {
-  Serial.begin(9600);
-  Serial.println("Location request data");
-  // Connect to WPA/WPA2 network
+void connect_wifi(){
+  // Connect on wifi
   WiFi.mode(WIFI_STA);
   WiFi.begin(ssid, passwd);
   while (WiFi.status() != WL_CONNECTED) {
-    Serial.println("Attempting to connect to WPA SSID: ");
+    Serial.print("Attempting to connect to WPA SSID: ");
     Serial.println(ssid);
     // wait 5 seconds for connection:
-    Serial.println("Status = ");
+    Serial.print("Status = ");
     Serial.println(WiFi.status());
     delay(500);
   }
-  Serial.println("Status = ");
+  Serial.print("End\n Status = ");
   Serial.println(WiFi.status());
-  Serial.println("Setup finalizado");
 }
-//HTTPClient http;
+
+void setup() {
+  Serial.begin(9600);
+  connect_wifi();
+}
 
 void loop() {
+  if (WiFi.status() != WL_CONNECTED){
+    connect_wifi();
+  }
   Serial.println("STATUS WIFI: "+ String(WiFi.status()));
   Serial.println("Location request data");
   Serial.println(location.getSurroundingWiFiJson());
-
-//  String serverPath = "google.com";
-//  if (cliente.connect(serverPath, 443)){
-//    Serial.println("connected");
-//    cliente.println("GET /search?q=arduino HTTP/1.0");
-//    cliente.println();
-//  }
-//  
+  String data = "{wifiAccessPoints: "+String(location.getSurroundingWiFiJson())+"}";
+  if (cliente.connect(serverPath, 443)){
+    Serial.println("Connected to server");
+    cliente.println("POST /update-sensor HTTP/1.1");
+    cliente.println("Host: " + serverPath);
+    cliente.println("Content-Type: application/json");
+    cliente.println(data);
+    cliente.println();
+  }
+  while(cliente.available()){
+    String line = cliente.readStringUntil('\r');
+    Serial.print(line);
+  }
   delay(10000);
 }
